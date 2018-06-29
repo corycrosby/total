@@ -38,6 +38,7 @@ module.exports = {
   },
   watch: true,
   devServer: {
+    historyApiFallback: true,
     inline: true,
     stats: {
       colors: true

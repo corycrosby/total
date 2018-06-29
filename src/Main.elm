@@ -1,18 +1,51 @@
 module Main exposing (..)
 
 import Html exposing (Html, div, program, text)
+import Navigation exposing (Location)
+import UrlParser as Url exposing ((</>), parsePath, top)
 
 
 -- MODEL
 
 
 type alias Model =
-    String
+    { page : Page }
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( "Hello", Cmd.none )
+initialModel : Page -> Model
+initialModel page =
+    { page = page }
+
+
+init : Location -> ( Model, Cmd Msg )
+init location =
+    let
+        currentPage =
+            parseLocation location
+    in
+    case currentPage of
+        Home ->
+            ( initialModel currentPage, Cmd.none )
+
+        PageNotFound ->
+            ( initialModel currentPage, Cmd.none )
+
+
+parseLocation : Navigation.Location -> Page
+parseLocation location =
+    case parsePath parseUrl location of
+        Just route ->
+            route
+
+        Nothing ->
+            PageNotFound
+
+
+parseUrl : Url.Parser (Page -> a) a
+parseUrl =
+    Url.oneOf
+        [ Url.map Home top
+        ]
 
 
 
@@ -21,6 +54,12 @@ init =
 
 type Msg
     = NoOp
+    | OnLocationChange Location
+
+
+type Page
+    = Home
+    | PageNotFound
 
 
 
@@ -29,8 +68,14 @@ type Msg
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ text model ]
+    case model.page of
+        Home ->
+            div []
+                [ text "Home" ]
+
+        PageNotFound ->
+            div []
+                [ text "Page Not Found" ]
 
 
 
@@ -40,6 +85,9 @@ view model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        OnLocationChange location ->
+            init location
+
         NoOp ->
             ( model, Cmd.none )
 
@@ -59,7 +107,7 @@ subscriptions model =
 
 main : Program Never Model Msg
 main =
-    program
+    Navigation.program OnLocationChange
         { init = init
         , view = view
         , update = update
